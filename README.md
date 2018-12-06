@@ -2,10 +2,11 @@
 
 Thin :digraph converter to graphviz .dot
 
-## Installation
+## Warning
 
-If [available in Hex](https://hex.pm/docs/publish), the package can be installed
-by adding `digraphviz` to your list of dependencies in `mix.exs`:
+API is unstable. Realization could be full of bugs and far from optimality.
+
+## Installation
 
 ```elixir
 def deps do
@@ -15,7 +16,10 @@ def deps do
 end
 ```
 
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/digraphviz](https://hexdocs.pm/digraphviz).
+## Documentation
 
+Documentation is available at [https://hexdocs.pm/digraphviz](https://hexdocs.pm/digraphviz).
+
+## TODO
+
+- [ ] Support subgraphs/clasters

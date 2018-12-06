@@ -1,5 +1,7 @@
 defmodule Digraphviz.Converter do
+  @moduledoc false
   defmodule Digraphviz.Converter.Graph do
+    @moduledoc false
     defstruct ~w(
       digraph
       subgraphs
