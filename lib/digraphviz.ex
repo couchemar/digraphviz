@@ -5,4 +5,8 @@ defmodule Digraphviz do
 
   @doc """
   """
+
+  def convert(digraph, type \\ :digraph, attributes \\ []) do
+    Digraphviz.Converter.convert(digraph, type, attributes)
+  end
 end

@@ -21,7 +21,7 @@ defmodule Digraphviz.MixProject do
   # Run "mix help deps" to learn about dependencies.
   defp deps do
     [
-      {:exsync, "~> 0.2.3", only: :dev},
+      {:exsync, "~> 0.2.3", only: :dev}
     ]
   end
 end
