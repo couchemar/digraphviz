@@ -1,12 +1,14 @@
 defmodule Digraphviz do
   @moduledoc """
-  Digraphviz -- converts digraph to .dot.
+  Digraphviz -- converts Erlang :digraph to .dot.
   """
 
   @doc """
   """
 
+  alias Digraphviz.Converter
+
   def convert(digraph, type \\ :digraph, attributes \\ []) do
-    Digraphviz.Converter.convert(digraph, type, attributes)
+    Converter.from(digraph) |> Converter.convert(type, attributes)
   end
 end
