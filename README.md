@@ -22,4 +22,4 @@ Documentation is available at [https://hexdocs.pm/digraphviz](https://hexdocs.pm
 
 ## TODO
 
-- [ ] Support subgraphs/clasters
+- [ ] Support subgraphs/clusters
