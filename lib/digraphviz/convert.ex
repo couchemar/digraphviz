@@ -2,9 +2,9 @@ defmodule Digraphviz.Converter do
   defmodule Digraphviz.Converter.Graph do
     defstruct ~w(
       digraph
-      type
       subgraphs
       node_converter
+      edge_converter
     )a
   end
 
@@ -15,17 +15,18 @@ defmodule Digraphviz.Converter do
   end
 
   def convert(graph, type \\ :digraph, attributes \\ []) do
-    type =
+    stype =
       case type do
         :digraph -> "digraph"
         :graph -> "graph"
       end
 
     [
-      type,
+      stype,
       " {",
       graph_attributes(attributes),
       nodes(graph),
+      edges(graph, type),
       "}"
     ]
   end
@@ -66,17 +67,48 @@ defmodule Digraphviz.Converter do
     node_list |> Enum.map(process_node(graph.digraph, converter))
   end
 
+  defp edges(graph, type) do
+    edge_list = :digraph.edges(graph.digraph)
+
+    converter =
+      case graph.edge_converter do
+        nil -> &edge/4
+        conv -> conv
+      end
+
+    edge_list |> Enum.map(process_edge(graph.digraph, converter, type))
+  end
+
   defp process_node(digraph, fun) do
     fn node_name ->
       case :digraph.vertex(digraph, node_name) do
         false -> []
-        {node_name, label} -> [fun.(node_name, label)]
+        {^node_name, label} -> fun.(node_name, label)
+      end
+    end
+  end
+
+  defp process_edge(digraph, fun, type) do
+    fn edge_name ->
+      case :digraph.edge(digraph, edge_name) do
+        false -> []
+        {^edge_name, v1, v2, label} -> fun.(v1, v2, label, type)
       end
     end
   end
 
   defp node(name, label) do
     [node_name(name), attributes(label)]
+  end
+
+  defp edge(v1, v2, label, type) do
+    connect =
+      case type do
+        :digraph -> "->"
+        :graph -> "--"
+      end
+
+    [node_name(v1), connect, node_name(v2), attributes(label)]
   end
 
   defp node_name(name) when is_binary(name) do
