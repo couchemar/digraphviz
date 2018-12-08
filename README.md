@@ -11,7 +11,7 @@ API is unstable. Realization could be full of bugs and far from optimality.
 ```elixir
 def deps do
   [
-    {:digraphviz, "~> 0.1.0"}
+    {:digraphviz, "~> 0.2.0"}
   ]
 end
 ```
