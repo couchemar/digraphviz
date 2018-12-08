@@ -2,6 +2,10 @@ defmodule DigraphvizTest do
   use ExUnit.Case
   doctest Digraphviz
 
+  def sort_by_first([a | _], [b | _]) do
+    a < b
+  end
+
   setup _ do
     digraph = :digraph.new()
     [digraph: digraph]
@@ -15,6 +19,7 @@ defmodule DigraphvizTest do
                [[], [], []],
                [],
                [],
+               [],
                "}"
              ]
     end
@@ -24,6 +29,7 @@ defmodule DigraphvizTest do
                "graph",
                " {",
                [[], [], []],
+               [],
                [],
                [],
                "}"
@@ -36,7 +42,7 @@ defmodule DigraphvizTest do
                  {:a, :b},
                  {"55", 42.2}
                ]
-             ) == ["graph", " {", [["graph", [{:a, :b}, {"55", 42.2}]], [], []], [], [], "}"]
+             ) == ["graph", " {", [["graph", [{:a, :b}, {"55", 42.2}]], [], []], [], [], [], "}"]
     end
 
     test "with attributes: node", ctx do
@@ -45,7 +51,7 @@ defmodule DigraphvizTest do
                  {:a, :b},
                  {"55", 42.2}
                ]
-             ) == ["graph", " {", [[], ["node", [{:a, :b}, {"55", 42.2}]], []], [], [], "}"]
+             ) == ["graph", " {", [[], ["node", [{:a, :b}, {"55", 42.2}]], []], [], [], [], "}"]
     end
 
     test "with attributes: edge", ctx do
@@ -54,7 +60,7 @@ defmodule DigraphvizTest do
                  {:a, :b},
                  {"55", 42.2}
                ]
-             ) == ["graph", " {", [[], [], ["edge", [{:a, :b}, {"55", 42.2}]]], [], [], "}"]
+             ) == ["graph", " {", [[], [], ["edge", [{:a, :b}, {"55", 42.2}]]], [], [], [], "}"]
     end
   end
 
@@ -67,10 +73,11 @@ defmodule DigraphvizTest do
              "digraph",
              " {",
              [[], [], []],
+             [],
              [
-               ["\"[:\\\"$v\\\" | 2]\"", []],
                ["\"[:\\\"$v\\\" | 1]\"", []],
-               ["\"[:\\\"$v\\\" | 0]\"", []]
+               ["\"[:\\\"$v\\\" | 0]\"", []],
+               ["\"[:\\\"$v\\\" | 2]\"", []]
              ],
              [],
              "}"
@@ -82,17 +89,20 @@ defmodule DigraphvizTest do
     :digraph.add_vertex(ctx.digraph, "bar", color: "green")
     :digraph.add_vertex(ctx.digraph, 42, color: "red", border: 4)
 
-    assert Digraphviz.convert(ctx.digraph) == [
-             "digraph",
-             " {",
-             [[], [], []],
-             [
-               ["\":foo\"", [" [", ["buz=bar,"], "];"]],
-               ["\"42\"", [" [", ["color=red,", "border=4,"], "];"]],
-               ["\"bar\"", [" [", ["color=green,"], "];"]]
-             ],
-             [],
-             "}"
+    [
+      "digraph",
+      " {",
+      [[], [], []],
+      [],
+      nodes,
+      [],
+      "}"
+    ] = Digraphviz.convert(ctx.digraph)
+
+    assert Enum.sort(nodes, &sort_by_first/2) == [
+             ["\"42\"", [" [", ["color=red,", "border=4,"], "];"]],
+             ["\":foo\"", [" [", ["buz=bar,"], "];"]],
+             ["\"bar\"", [" [", ["color=green,"], "];"]]
            ]
   end
 
@@ -108,16 +118,24 @@ defmodule DigraphvizTest do
       :digraph.add_edge(ctx.digraph, ctx.v1, ctx.v2)
       :digraph.add_edge(ctx.digraph, ctx.v2, ctx.v1)
 
-      assert Digraphviz.convert(ctx.digraph) == [
-               "digraph",
-               " {",
-               [[], [], []],
-               [["\"[:\\\"$v\\\" | 1]\"", []], ["\"[:\\\"$v\\\" | 0]\"", []]],
-               [
-                 ["\"[:\\\"$v\\\" | 1]\"", "->", "\"[:\\\"$v\\\" | 0]\"", []],
-                 ["\"[:\\\"$v\\\" | 0]\"", "->", "\"[:\\\"$v\\\" | 1]\"", []]
-               ],
-               "}"
+      [
+        "digraph",
+        " {",
+        [[], [], []],
+        [],
+        nodes,
+        edges,
+        "}"
+      ] = Digraphviz.convert(ctx.digraph)
+
+      assert Enum.sort(nodes, &sort_by_first/2) == [
+               ["\"[:\\\"$v\\\" | 0]\"", []],
+               ["\"[:\\\"$v\\\" | 1]\"", []]
+             ]
+
+      assert Enum.sort(edges, &sort_by_first/2) == [
+               ["\"[:\\\"$v\\\" | 0]\"", "->", "\"[:\\\"$v\\\" | 1]\"", []],
+               ["\"[:\\\"$v\\\" | 1]\"", "->", "\"[:\\\"$v\\\" | 0]\"", []]
              ]
     end
 
@@ -125,27 +143,81 @@ defmodule DigraphvizTest do
       :digraph.add_edge(ctx.digraph, ctx.v1, ctx.v2, foo: :bar)
       :digraph.add_edge(ctx.digraph, ctx.v2, ctx.v1, fiz: "buz")
 
-      assert Digraphviz.convert(ctx.digraph) == [
-               "digraph",
-               " {",
-               [[], [], []],
-               [["\"[:\\\"$v\\\" | 1]\"", []], ["\"[:\\\"$v\\\" | 0]\"", []]],
-               [
-                 [
-                   "\"[:\\\"$v\\\" | 1]\"",
-                   "->",
-                   "\"[:\\\"$v\\\" | 0]\"",
-                   [" [", ["fiz=buz,"], "];"]
-                 ],
-                 [
-                   "\"[:\\\"$v\\\" | 0]\"",
-                   "->",
-                   "\"[:\\\"$v\\\" | 1]\"",
-                   [" [", ["foo=bar,"], "];"]
-                 ]
-               ],
-               "}"
+      [
+        "digraph",
+        " {",
+        [[], [], []],
+        [],
+        nodes,
+        edges,
+        "}"
+      ] = Digraphviz.convert(ctx.digraph)
+
+      assert Enum.sort(nodes, &sort_by_first/2) == [
+               ["\"[:\\\"$v\\\" | 0]\"", []],
+               ["\"[:\\\"$v\\\" | 1]\"", []]
              ]
+
+      assert Enum.sort(edges, &sort_by_first/2) == [
+               [
+                 "\"[:\\\"$v\\\" | 0]\"",
+                 "->",
+                 "\"[:\\\"$v\\\" | 1]\"",
+                 [" [", ["foo=bar,"], "];"]
+               ],
+               [
+                 "\"[:\\\"$v\\\" | 1]\"",
+                 "->",
+                 "\"[:\\\"$v\\\" | 0]\"",
+                 [" [", ["fiz=buz,"], "];"]
+               ]
+             ]
+    end
+  end
+
+  describe "Subgraphs" do
+    setup ctx do
+      :digraph.add_vertex(ctx.digraph, "1", subgraph: :foo)
+      :digraph.add_vertex(ctx.digraph, "2", subgraph: {:foo, :bar})
+      :digraph.add_vertex(ctx.digraph, "3", subgraph: {:foo, :baz})
+      :digraph.add_vertex(ctx.digraph, "4", subgraph: {:foo, :bar, :fiz})
+      :digraph.add_vertex(ctx.digraph, "5", subgraph: {:foo, :bar, :quick})
+      :ok
+    end
+
+    test "without attributes", ctx do
+      assert Digraphviz.convert(ctx.digraph) ==
+               [
+                 "digraph",
+                 " {",
+                 [[], [], []],
+                 [
+                   [
+                     "subgraph ",
+                     "\":foo\"",
+                     " {",
+                     [
+                       ["subgraph ", "\":baz\"", " {", [], [["\"3\"", []]], "}"],
+                       [
+                         "subgraph ",
+                         "\":bar\"",
+                         " {",
+                         [
+                           ["subgraph ", "\":quick\"", " {", [], [["\"5\"", []]], "}"],
+                           ["subgraph ", "\":fiz\"", " {", [], [["\"4\"", []]], "}"]
+                         ],
+                         [["\"2\"", []]],
+                         "}"
+                       ]
+                     ],
+                     [["\"1\"", []]],
+                     "}"
+                   ]
+                 ],
+                 [],
+                 [],
+                 "}"
+               ]
     end
   end
 end

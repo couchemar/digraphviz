@@ -1,6 +1,6 @@
 defmodule Digraphviz.Converter do
   @moduledoc false
-  defmodule Digraphviz.Converter.Graph do
+  defmodule Document do
     @moduledoc false
     defstruct ~w(
       digraph
@@ -10,10 +10,10 @@ defmodule Digraphviz.Converter do
     )a
   end
 
-  alias Digraphviz.Converter.Graph
+  alias Digraphviz.Types
 
   def from(digraph) do
-    %Graph{digraph: digraph}
+    %Document{digraph: digraph}
   end
 
   def convert(graph, type \\ :digraph, attributes \\ []) do
@@ -23,14 +23,39 @@ defmodule Digraphviz.Converter do
         :graph -> "graph"
       end
 
+    nodes_and_subgraphs = process(graph)
+
     [
       stype,
       " {",
       graph_attributes(attributes),
-      nodes(graph),
+      subgraphs(nodes_and_subgraphs.subgraphs),
+      nodes_and_subgraphs.nodes,
       edges(graph, type),
       "}"
     ]
+  end
+
+  defp process(graph) do
+    converter =
+      case graph.node_converter do
+        nil -> &node/2
+        conv -> conv
+      end
+
+    :digraph.vertices(graph.digraph)
+    |> Stream.map(fn n ->
+      {^n, _l} = :digraph.vertex(graph.digraph, n)
+    end)
+    |> Enum.reduce(
+      Types.Subgraph.create(),
+      fn {v, l}, g ->
+        case converter.(v, l) do
+          {n, nil} -> Types.Subgraph.add_node(g, n)
+          {n, subgraph} -> Types.Subgraph.add_node_to_subgraph(g, n, subgraph)
+        end
+      end
+    )
   end
 
   defp graph_attributes(attributes) do
@@ -39,17 +64,17 @@ defmodule Digraphviz.Converter do
     edge_attrs = Keyword.get(attributes, :edge, [])
 
     [
-      if not Enum.empty?(graph_attrs) do
+      unless Enum.empty?(graph_attrs) do
         ["graph", graph_attrs]
       else
         []
       end,
-      if not Enum.empty?(node_attrs) do
+      unless Enum.empty?(node_attrs) do
         ["node", node_attrs]
       else
         []
       end,
-      if not Enum.empty?(edge_attrs) do
+      unless Enum.empty?(edge_attrs) do
         ["edge", edge_attrs]
       else
         []
@@ -57,16 +82,8 @@ defmodule Digraphviz.Converter do
     ]
   end
 
-  defp nodes(graph) do
-    node_list = :digraph.vertices(graph.digraph)
-
-    converter =
-      case graph.node_converter do
-        nil -> &node/2
-        conv -> conv
-      end
-
-    node_list |> Enum.map(process_node(graph.digraph, converter))
+  defp subgraphs(subgraphs) do
+    Types.Subgraph.fold(subgraphs)
   end
 
   defp edges(graph, type) do
@@ -81,15 +98,6 @@ defmodule Digraphviz.Converter do
     edge_list |> Enum.map(process_edge(graph.digraph, converter, type))
   end
 
-  defp process_node(digraph, fun) do
-    fn node_name ->
-      case :digraph.vertex(digraph, node_name) do
-        false -> []
-        {^node_name, label} -> fun.(node_name, label)
-      end
-    end
-  end
-
   defp process_edge(digraph, fun, type) do
     fn edge_name ->
       case :digraph.edge(digraph, edge_name) do
@@ -100,7 +108,8 @@ defmodule Digraphviz.Converter do
   end
 
   defp node(name, label) do
-    [node_name(name), attributes(label)]
+    {subgraph, label} = Keyword.pop(label, :subgraph)
+    {[Types.ID.convert(name), attributes(label)], subgraph}
   end
 
   defp edge(v1, v2, label, type) do
@@ -110,16 +119,7 @@ defmodule Digraphviz.Converter do
         :graph -> "--"
       end
 
-    [node_name(v1), connect, node_name(v2), attributes(label)]
-  end
-
-  defp node_name(name) when is_binary(name) do
-    "#{inspect(name)}"
-  end
-
-  defp node_name(name) do
-    escaped = "#{inspect(name)}" |> String.replace("\"", "\\\"")
-    "\"#{escaped}\""
+    [Types.ID.convert(v1), connect, Types.ID.convert(v2), attributes(label)]
   end
 
   defp attributes(attrs) when is_list(attrs) do
