@@ -17,6 +17,7 @@ defmodule Digraphviz.Types.AList do
   defp handle_str(val) when is_binary(val) do
     "\"#{val}\""
   end
+
   defp handle_str(val), do: val
 end
 

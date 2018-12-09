@@ -11,7 +11,7 @@ API is unstable. Realization could be full of bugs and far from optimality.
 ```elixir
 def deps do
   [
-    {:digraphviz, "~> 0.2.0"}
+    {:digraphviz, "~> 0.3.0"}
   ]
 end
 ```
@@ -23,4 +23,5 @@ Documentation is available at [https://hexdocs.pm/digraphviz](https://hexdocs.pm
 ## TODO
 
 - [x] Support subgraphs/clusters
-- [ ] Support subgraph attributes
+- [x] Support subgraph attributes
+- [ ] Documentation
