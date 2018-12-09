@@ -7,7 +7,7 @@ defmodule Digraphviz do
   @doc """
   Converts :digraph to iodata which contains .dot.
 
-  `attributes` define global attributes for graph, nodes and edges.
+  `attributes` defines global attributes for graph, nodes and edges.
 
   * :graph -- graph attributes
   * :node -- node attributes
@@ -20,9 +20,23 @@ defmodule Digraphviz do
   ```
   Digraphviz.convert(graph, :digraph, graph: [fontsize: 10], node: [shape: :record], edge: [color: :red])
   ```
+
+  The subgraph attributes can be placed in `subgraphs` map:
+
+  ```
+  %{
+      "cluster_1": %{
+          :attributes => [node: [...], edge: [...], grap: []],
+          "cluster_1_2": %{
+              ...
+          }
+      }
+  }
+  Subgraphs can be nested.
+  ```
   """
-  @spec convert(:digraph.new(), :digraph | :graph, Keyword.t()) :: iodata()
-  def convert(digraph, type \\ :digraph, attributes \\ []) do
-    Converter.from(digraph) |> Converter.convert(type, attributes)
+  @spec convert(:digraph.new(), :digraph | :graph, Keyword.t(), Map.t()) :: iodata()
+  def convert(digraph, type \\ :digraph, attributes \\ [], subgraphs \\ %{}) do
+    Converter.from(digraph) |> Converter.convert(type, attributes, subgraphs)
   end
 end

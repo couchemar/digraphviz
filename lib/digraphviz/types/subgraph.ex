@@ -1,5 +1,6 @@
 defmodule Digraphviz.Types.Subgraph do
   alias Digraphviz.Types.ID
+  alias Digraphviz.Types.Attributes
 
   @moduledoc false
   defstruct [:nodes, :subgraphs]
@@ -36,10 +37,29 @@ defmodule Digraphviz.Types.Subgraph do
     add_node_to_subgraph(graph, node, [subgraph])
   end
 
-  def fold(graphs) do
+  def fold(graphs, subgraphs_info) do
     graphs
     |> Enum.reduce([], fn {name, val}, acc ->
-      [["subgraph ", ID.convert(name), " {", fold(val.subgraphs), val.nodes, "}"] | acc]
+      sg = Map.get(subgraphs_info, name, %{})
+
+      attrs =
+        case sg[:attributes] do
+          nil -> []
+          attrs -> Attributes.convert(attrs)
+        end
+
+      [
+        [
+          "subgraph ",
+          ID.convert(name),
+          " {",
+          attrs,
+          fold(val.subgraphs, sg),
+          val.nodes,
+          "}"
+        ]
+        | acc
+      ]
     end)
   end
 end

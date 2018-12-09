@@ -16,7 +16,7 @@ defmodule Digraphviz.Converter do
     %Document{digraph: digraph}
   end
 
-  def convert(graph, type \\ :digraph, attributes \\ []) do
+  def convert(graph, type \\ :digraph, attributes \\ [], subgraphs \\ %{}) do
     stype =
       case type do
         :digraph -> "digraph"
@@ -28,8 +28,8 @@ defmodule Digraphviz.Converter do
     [
       stype,
       " {",
-      graph_attributes(attributes),
-      subgraphs(nodes_and_subgraphs.subgraphs),
+      Types.Attributes.convert(attributes),
+      subgraphs(nodes_and_subgraphs.subgraphs, subgraphs),
       nodes_and_subgraphs.nodes,
       edges(graph, type),
       "}"
@@ -58,32 +58,8 @@ defmodule Digraphviz.Converter do
     )
   end
 
-  defp graph_attributes(attributes) do
-    graph_attrs = Keyword.get(attributes, :graph, [])
-    node_attrs = Keyword.get(attributes, :node, [])
-    edge_attrs = Keyword.get(attributes, :edge, [])
-
-    [
-      unless Enum.empty?(graph_attrs) do
-        ["graph", graph_attrs]
-      else
-        []
-      end,
-      unless Enum.empty?(node_attrs) do
-        ["node", node_attrs]
-      else
-        []
-      end,
-      unless Enum.empty?(edge_attrs) do
-        ["edge", edge_attrs]
-      else
-        []
-      end
-    ]
-  end
-
-  defp subgraphs(subgraphs) do
-    Types.Subgraph.fold(subgraphs)
+  defp subgraphs(subgraphs, subgraphs_info) do
+    Types.Subgraph.fold(subgraphs, subgraphs_info)
   end
 
   defp edges(graph, type) do
@@ -109,7 +85,7 @@ defmodule Digraphviz.Converter do
 
   defp node(name, label) do
     {subgraph, label} = Keyword.pop(label, :subgraph)
-    {[Types.ID.convert(name), attributes(label)], subgraph}
+    {[Types.ID.convert(name), Types.AttrsList.convert(label)], subgraph}
   end
 
   defp edge(v1, v2, label, type) do
@@ -119,20 +95,6 @@ defmodule Digraphviz.Converter do
         :graph -> "--"
       end
 
-    [Types.ID.convert(v1), connect, Types.ID.convert(v2), attributes(label)]
-  end
-
-  defp attributes(attrs) when is_list(attrs) do
-    case List.foldr(attrs, [], fn
-           {_k, _w} = kw, acc -> [attr(kw) | acc]
-           _, acc -> acc
-         end) do
-      [] -> []
-      attr_list -> [" [", attr_list, "];"]
-    end
-  end
-
-  defp attr({name, val}) do
-    "#{name}=#{val},"
+    [Types.ID.convert(v1), connect, Types.ID.convert(v2), Types.AttrsList.convert(label)]
   end
 end

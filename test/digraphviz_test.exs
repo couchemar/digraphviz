@@ -16,7 +16,7 @@ defmodule DigraphvizTest do
       assert Digraphviz.convert(ctx.digraph) == [
                "digraph",
                " {",
-               [[], [], []],
+               [[], [], [], []],
                [],
                [],
                [],
@@ -28,7 +28,7 @@ defmodule DigraphvizTest do
       assert Digraphviz.convert(ctx.digraph, :graph) == [
                "graph",
                " {",
-               [[], [], []],
+               [[], [], [], []],
                [],
                [],
                [],
@@ -42,7 +42,15 @@ defmodule DigraphvizTest do
                  {:a, :b},
                  {"55", 42.2}
                ]
-             ) == ["graph", " {", [["graph", [{:a, :b}, {"55", 42.2}]], [], []], [], [], [], "}"]
+             ) == [
+               "graph",
+               " {",
+               [["graph", [" [", [["a=b", ", "], "55=42.2"], "];"]], [], [], []],
+               [],
+               [],
+               [],
+               "}"
+             ]
     end
 
     test "with attributes: node", ctx do
@@ -51,7 +59,15 @@ defmodule DigraphvizTest do
                  {:a, :b},
                  {"55", 42.2}
                ]
-             ) == ["graph", " {", [[], ["node", [{:a, :b}, {"55", 42.2}]], []], [], [], [], "}"]
+             ) == [
+               "graph",
+               " {",
+               [[], ["node", [" [", [["a=b", ", "], "55=42.2"], "];"]], [], []],
+               [],
+               [],
+               [],
+               "}"
+             ]
     end
 
     test "with attributes: edge", ctx do
@@ -60,7 +76,15 @@ defmodule DigraphvizTest do
                  {:a, :b},
                  {"55", 42.2}
                ]
-             ) == ["graph", " {", [[], [], ["edge", [{:a, :b}, {"55", 42.2}]]], [], [], [], "}"]
+             ) == [
+               "graph",
+               " {",
+               [[], [], ["edge", [" [", [["a=b", ", "], "55=42.2"], "];"]], []],
+               [],
+               [],
+               [],
+               "}"
+             ]
     end
   end
 
@@ -72,7 +96,7 @@ defmodule DigraphvizTest do
     assert Digraphviz.convert(ctx.digraph) == [
              "digraph",
              " {",
-             [[], [], []],
+             [[], [], [], []],
              [],
              [
                ["\"[:\\\"$v\\\" | 1]\"", []],
@@ -92,7 +116,7 @@ defmodule DigraphvizTest do
     [
       "digraph",
       " {",
-      [[], [], []],
+      [[], [], [], []],
       [],
       nodes,
       [],
@@ -100,9 +124,9 @@ defmodule DigraphvizTest do
     ] = Digraphviz.convert(ctx.digraph)
 
     assert Enum.sort(nodes, &sort_by_first/2) == [
-             ["\"42\"", [" [", ["color=red,", "border=4,"], "];"]],
-             ["\":foo\"", [" [", ["buz=bar,"], "];"]],
-             ["\"bar\"", [" [", ["color=green,"], "];"]]
+             ["\"42\"", [" [", [["color=\"red\"", ", "], "border=4"], "];"]],
+             ["\":foo\"", [" [", ["buz=bar"], "];"]],
+             ["\"bar\"", [" [", ["color=\"green\""], "];"]]
            ]
   end
 
@@ -121,7 +145,7 @@ defmodule DigraphvizTest do
       [
         "digraph",
         " {",
-        [[], [], []],
+        [[], [], [], []],
         [],
         nodes,
         edges,
@@ -146,7 +170,7 @@ defmodule DigraphvizTest do
       [
         "digraph",
         " {",
-        [[], [], []],
+        [[], [], [], []],
         [],
         nodes,
         edges,
@@ -163,13 +187,13 @@ defmodule DigraphvizTest do
                  "\"[:\\\"$v\\\" | 0]\"",
                  "->",
                  "\"[:\\\"$v\\\" | 1]\"",
-                 [" [", ["foo=bar,"], "];"]
+                 [" [", ["foo=bar"], "];"]
                ],
                [
                  "\"[:\\\"$v\\\" | 1]\"",
                  "->",
                  "\"[:\\\"$v\\\" | 0]\"",
-                 [" [", ["fiz=buz,"], "];"]
+                 [" [", ["fiz=\"buz\""], "];"]
                ]
              ]
     end
@@ -190,21 +214,91 @@ defmodule DigraphvizTest do
                [
                  "digraph",
                  " {",
-                 [[], [], []],
+                 [[], [], [], []],
+                 [
+                   [
+                     "subgraph ",
+                     "\":foo\"",
+                     " {",
+                     [],
+                     [
+                       ["subgraph ", "\":baz\"", " {", [], [], [["\"3\"", []]], "}"],
+                       [
+                         "subgraph ",
+                         "\":bar\"",
+                         " {",
+                         [],
+                         [
+                           ["subgraph ", "\":quick\"", " {", [], [], [["\"5\"", []]], "}"],
+                           ["subgraph ", "\":fiz\"", " {", [], [], [["\"4\"", []]], "}"]
+                         ],
+                         [["\"2\"", []]],
+                         "}"
+                       ]
+                     ],
+                     [["\"1\"", []]],
+                     "}"
+                   ]
+                 ],
+                 [],
+                 [],
+                 "}"
+               ]
+    end
+
+    test "with attributes", ctx do
+      assert Digraphviz.convert(ctx.digraph, :digraph, [], %{
+               foo: %{
+                 attributes: [
+                   graph: [fill: "orange"],
+                   node: [color: "yellow"],
+                   edge: [color: "magenta"]
+                 ],
+                 bar: %{
+                   quick: %{
+                     attributes: [node: [color: "gold"], label: "My shiny node"]
+                   }
+                 }
+               }
+             }) ==
+               [
+                 "digraph",
+                 " {",
+                 [[], [], [], []],
                  [
                    [
                      "subgraph ",
                      "\":foo\"",
                      " {",
                      [
-                       ["subgraph ", "\":baz\"", " {", [], [["\"3\"", []]], "}"],
+                       ["graph", [" [", ["fill=\"orange\""], "];"]],
+                       ["node", [" [", ["color=\"yellow\""], "];"]],
+                       ["edge", [" [", ["color=\"magenta\""], "];"]],
+                       []
+                     ],
+                     [
+                       ["subgraph ", "\":baz\"", " {", [], [], [["\"3\"", []]], "}"],
                        [
                          "subgraph ",
                          "\":bar\"",
                          " {",
+                         [],
                          [
-                           ["subgraph ", "\":quick\"", " {", [], [["\"5\"", []]], "}"],
-                           ["subgraph ", "\":fiz\"", " {", [], [["\"4\"", []]], "}"]
+                           [
+                             "subgraph ",
+                             "\":quick\"",
+                             " {",
+                             [
+                               [],
+                               ["node", [" [", ["color=\"gold\""], "];"]],
+                               [],
+                               [["label=\"My shiny node\""], ";"]
+                             ],
+                             [],
+                             [["\"5\"", []]],
+                             "}"
+                           ],
+                           ["subgraph ", "\":fiz\"", " {", [], [], [["\"4\"", []]], "}"]
                          ],
                          [["\"2\"", []]],
                          "}"
